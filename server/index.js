@@ -4,6 +4,7 @@ const express = require('express')
 const dbConnect = require('./config/db')
 const userRoute = require('./routes/userRoute')
 const authRoute = require('./routes/authRoute')
+const listingRoute = require('./routes/listingRoute')
 const { notFound, errorHandler } = require('./utils/errorHandler')
 const cookieParser = require('cookie-parser')
 
@@ -19,6 +20,7 @@ app.use(cookieParser())
 // Routes
 app.use('/api/auth', authRoute)
 app.use('/api/user', userRoute)
+app.use('/api/listing', listingRoute)
 
 app.use(notFound)
 app.use(errorHandler)
