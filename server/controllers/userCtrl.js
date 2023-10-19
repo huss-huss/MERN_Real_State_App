@@ -1,67 +1,35 @@
 const User = require('../models/userModel')
+const { customError } = require('../utils/errorHandler')
+const bcrypt = require('bcryptjs')
 
-// Get all users
-const getAllUsers = async (req, res) => {
+const updateUser = async (req, res, next) => {
+  if (req.user.id !== req.params.id)
+    return next(customError(401, 'You can only update your account!'))
   try {
-    const users = await User.find()
-    res.status(200).json(users)
-  } catch (error) {
-    res.status(500).json({ message: error.message })
-  }
-}
+    if (req.body.password) {
+      req.body.password = await bcrypt.hash(req.body.password, 10)
+    }
 
-// Get a single user
-const getUserById = async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id)
-    res.status(200).json(user)
-  } catch (error) {
-    res.status(500).json({ message: error.message })
-  }
-}
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      {
+        $set: {
+          username: req.body.username,
+          email: req.body.email,
+          password: req.body.password,
+          avatar: req.body.avatar,
+        },
+      },
+      { new: true }
+    )
 
-// Create a new user
-const createUser = async (req, res) => {
-  const user = new User({
-    username: req.body.username,
-    email: req.body.email,
-    password: req.body.password,
-  })
-
-  try {
-    const newUser = await user.save()
-    res.status(201).json(newUser)
-  } catch (error) {
-    res.status(400).json({ message: error.message })
-  }
-}
-
-// Update a user
-const updateUser = async (req, res) => {
-  try {
-    const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-    })
-    res.status(200).json(updatedUser)
-  } catch (error) {
-    res.status(500).json({ message: error.message })
-  }
-}
-
-// Delete a user
-const deleteUser = async (req, res) => {
-  try {
-    const deletedUser = await User.findByIdAndDelete(req.params.id)
-    res.status(200).json(deletedUser)
-  } catch (error) {
-    res.status(500).json({ message: error.message })
+    const { password, ...rest } = updatedUser._doc
+    res.status(200).json(rest)
+  } catch (err) {
+    next(err)
   }
 }
 
 module.exports = {
-  getAllUsers,
-  getUserById,
-  createUser,
   updateUser,
-  deleteUser,
 }
