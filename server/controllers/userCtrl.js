@@ -1,3 +1,4 @@
+const Listing = require('../models/listingModel')
 const User = require('../models/userModel')
 const { customError } = require('../utils/errorHandler')
 const bcrypt = require('bcryptjs')
@@ -41,7 +42,19 @@ const deleteUser = async (req, res, next) => {
   }
 }
 
+const getUserListing = async (req, res, next) => {
+  if (req.user.id !== req.params.id)
+    return next(customError(401, 'You can only see your account listing!'))
+  try {
+    const listing = await Listing.find({ userRef: req.params.id })
+    res.status(200).json(listing)
+  } catch (error) {
+    next(error)
+  }
+}
+
 module.exports = {
   updateUser,
   deleteUser,
+  getUserListing,
 }
