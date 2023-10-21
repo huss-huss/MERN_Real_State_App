@@ -26,7 +26,28 @@ const deleteListing = async (req, res, next) => {
   }
 }
 
+const updateListing = async (req, res, next) => {
+  const listing = await Listing.findById(req.params.id)
+  if (!listing) {
+    return next(customError(404, 'Listing not found'))
+  }
+  if (req.user.id.toString() !== listing.userRef.toString()) {
+    return next(customError(401, 'Unauthorized'))
+  }
+  try {
+    const updatedListing = await Listing.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    )
+    res.status(200).json(updatedListing)
+  } catch (error) {
+    next(error)
+  }
+}
+
 module.exports = {
   createListing,
   deleteListing,
+  updateListing,
 }
