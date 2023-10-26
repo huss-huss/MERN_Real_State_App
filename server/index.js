@@ -1,5 +1,6 @@
 require('dotenv').config()
 const express = require('express')
+const path = require('path')
 
 const dbConnect = require('./config/db')
 const userRoute = require('./routes/userRoute')
@@ -7,6 +8,8 @@ const authRoute = require('./routes/authRoute')
 const listingRoute = require('./routes/listingRoute')
 const { notFound, errorHandler } = require('./utils/errorHandler')
 const cookieParser = require('cookie-parser')
+
+const __dirname = path.resolve()
 
 const app = express()
 
@@ -21,6 +24,12 @@ app.use(cookieParser())
 app.use('/api/auth', authRoute)
 app.use('/api/user', userRoute)
 app.use('/api/listing', listingRoute)
+
+app.use(express.static(path.join(__dirname, '/client/dist')))
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'client', 'dist', 'index.html'))
+})
 
 app.use(notFound)
 app.use(errorHandler)
