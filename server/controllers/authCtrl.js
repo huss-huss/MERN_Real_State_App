@@ -32,7 +32,7 @@ const signIn = async (req, res, next) => {
       username: user.username,
       email: user.email,
     }
-    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1d' })
+    const token = jwt.sign(payload, process.env.JWT_SECRET)
     const { password: userPassword, ...rest } = user._doc
 
     res.cookie('access_token', token, { httpOnly: true }).status(200).json(rest)
@@ -51,9 +51,7 @@ const google = async (req, res, next) => {
         username: user.username,
         email: user.email,
       }
-      const token = jwt.sign(payload, process.env.JWT_SECRET, {
-        expiresIn: '1d',
-      })
+      const token = jwt.sign(payload, process.env.JWT_SECRET)
       const { password: userPassword, ...rest } = user._doc
 
       res
@@ -75,9 +73,7 @@ const google = async (req, res, next) => {
         avatar: photo,
       })
       await newUser.save()
-      const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, {
-        expiresIn: '1d',
-      })
+      const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET)
       const { password: userPassword, ...rest } = newUser._doc
       res
         .cookie('access_token', token, { httpOnly: true })
