@@ -9,7 +9,7 @@ const listingRoute = require('./routes/listingRoute')
 const { notFound, errorHandler } = require('./utils/errorHandler')
 const cookieParser = require('cookie-parser')
 
-const __dirname = path.resolve()
+//const __dirname = path.resolve()
 
 const app = express()
 
