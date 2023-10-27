@@ -9,7 +9,7 @@ const listingRoute = require('./routes/listingRoute')
 const { notFound, errorHandler } = require('./utils/errorHandler')
 const cookieParser = require('cookie-parser')
 
-const __dirnam = path.resolve()
+const __local_dirname = path.resolve()
 
 const app = express()
 
@@ -25,10 +25,10 @@ app.use('/api/auth', authRoute)
 app.use('/api/user', userRoute)
 app.use('/api/listing', listingRoute)
 
-app.use(express.static(path.join(__dirnam, '/client/dist')))
+app.use(express.static(path.join(__local_dirname, '/client/dist')))
 
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirnam, 'client', 'dist', 'index.html'))
+  res.sendFile(path.join(__local_dirname, 'client', 'dist', 'index.html'))
 })
 
 app.use(notFound)
