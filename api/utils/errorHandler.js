@@ -37,7 +37,6 @@ const normalize = (err) => {
   return null
 }
 
-// eslint-disable-next-line no-unused-vars
 const errorHandler = (err, req, res, next) => {
   const known = normalize(err)
   const statusCode = known?.statusCode || 500

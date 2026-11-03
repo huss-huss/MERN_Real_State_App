@@ -12,8 +12,8 @@
     "start": "node api/index.js",
     "dev:client": "npm run dev --prefix client",
     "build": "npm install && npm install --prefix client && npm run build --prefix client",
-    "lint": "eslint api",
-    "lint:fix": "eslint api --fix",
+    "lint": "eslint api eslint.config.js --max-warnings 0",
+    "lint:fix": "eslint api eslint.config.js --fix",
     "test": "jest",
     "test:coverage": "jest --coverage"
   },
