@@ -1,0 +1,37 @@
+# Local development stack: API (serving the built client) + MongoDB.
+# Usage: cp .env.example .env && docker compose up --build
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      args:
+        VITE_FIREBASE_API_KEY: ${VITE_FIREBASE_API_KEY:-}
+    ports:
+      - "3000:3000"
+    environment:
+      # Defaults to development so the auth cookie is not marked Secure on plain http://localhost.
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 3000
+      MONGODB_URI: mongodb://mongo:27017/real-estate
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+volumes:
+  mongo-data:
