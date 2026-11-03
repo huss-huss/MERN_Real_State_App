@@ -149,8 +149,8 @@ push and pull request.
 - **Config**: secrets come from environment variables only; the server refuses to start without
   `MONGODB_URI` and `JWT_SECRET`, and requires a 32+ character secret in production.
 
-Known limitations: the client still has ESLint findings in older UI code, and the client dependency tree has
-open `npm audit` advisories that need a Vite/Firebase major upgrade.
+Known limitations: the client still has ESLint findings in older UI code, and the client dependency tree
+(Vite 4, Firebase 10) has open `npm audit` advisories that were not addressed in this pass.
 
 ## License
 
