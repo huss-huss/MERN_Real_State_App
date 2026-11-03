@@ -40,6 +40,7 @@ const listingSchema = new mongoose.Schema(
     },
     type: {
       type: String,
+      enum: ['rent', 'sale'],
       required: true,
     },
     offer: {
@@ -47,18 +48,21 @@ const listingSchema = new mongoose.Schema(
       required: true,
     },
     imageUrls: {
-      type: Array,
+      type: [String],
       required: true,
     },
     userRef: {
       type: String,
       required: true,
+      index: true,
     },
   },
   {
     timestamps: true,
   }
 )
+
+listingSchema.index({ createdAt: -1 })
 
 const Listing = mongoose.model('Listing', listingSchema)
 

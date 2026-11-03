@@ -1,74 +1,55 @@
+const bcrypt = require('bcryptjs')
 const Listing = require('../models/listingModel')
 const User = require('../models/userModel')
 const { customError } = require('../utils/errorHandler')
-const bcrypt = require('bcryptjs')
+const { clearAuthCookie } = require('../utils/auth')
+const asyncHandler = require('../utils/asyncHandler')
 
-const updateUser = async (req, res, next) => {
-  if (req.user.id !== req.params.id)
-    return next(customError(401, 'You can only update your account!'))
-  try {
-    if (req.body.password) {
-      req.body.password = await bcrypt.hash(req.body.password, 10)
-    }
-
-    const updatedUser = await User.findByIdAndUpdate(
-      req.params.id,
-      {
-        $set: {
-          username: req.body.username,
-          email: req.body.email,
-          password: req.body.password,
-          avatar: req.body.avatar,
-        },
-      },
-      { new: true }
-    )
-
-    const { password, ...rest } = updatedUser._doc
-    res.status(200).json(rest)
-  } catch (err) {
-    next(err)
+const assertSelf = (req, action) => {
+  if (req.user.id !== req.params.id) {
+    throw customError(403, `You can only ${action} your own account`)
   }
 }
 
-const deleteUser = async (req, res, next) => {
-  if (req.user.id !== req.params.id)
-    return next(customError(401, 'You can only delete your account!'))
-  try {
-    await User.findByIdAndDelete(req.params.id)
-    res.status(200).clearCookie('access_token').json('User has been deleted...')
-  } catch (err) {
-    next(err)
-  }
-}
+const updateUser = asyncHandler(async (req, res) => {
+  assertSelf(req, 'update')
+  const { username, email, password, avatar } = req.body
 
-const getUserListing = async (req, res, next) => {
-  if (req.user.id !== req.params.id)
-    return next(customError(401, 'You can only see your account listing!'))
-  try {
-    const listing = await Listing.find({ userRef: req.params.id })
-    res.status(200).json(listing)
-  } catch (error) {
-    next(error)
-  }
-}
+  const update = {}
+  if (username) update.username = username
+  if (email) update.email = email
+  if (avatar) update.avatar = avatar
+  if (password) update.password = await bcrypt.hash(password, 10)
 
-const getUser = async (req, res, next) => {
-  try {
-    const user = await User.findById(req.params.id)
+  const user = await User.findByIdAndUpdate(
+    req.params.id,
+    { $set: update },
+    { new: true, runValidators: true }
+  )
+  if (!user) throw customError(404, 'User not found')
+  res.status(200).json(user.toJSON())
+})
 
-    if (!user) return next(customError(404, 'User not found!'))
+const deleteUser = asyncHandler(async (req, res) => {
+  assertSelf(req, 'delete')
+  const user = await User.findByIdAndDelete(req.params.id)
+  if (!user) throw customError(404, 'User not found')
+  // Remove the user's listings so they don't linger without an owner.
+  await Listing.deleteMany({ userRef: req.params.id })
+  clearAuthCookie(res).status(200).json({ message: 'User has been deleted' })
+})
 
-    const { password, ...rest } = user._doc
-    res.status(200).json(rest)
-  } catch (error) {
-    next(error)
-  }
-}
+const getUserListing = asyncHandler(async (req, res) => {
+  assertSelf(req, 'view listings for')
+  const listings = await Listing.find({ userRef: req.params.id }).sort({ createdAt: -1 })
+  res.status(200).json(listings)
+})
 
-module.exports = {
-  updateUser,
-  deleteUser,
-  getUserListing,
-  getUser,
-}
+// Contact card for signed-in users, used by the listing page ("Contact landlord").
+const getUser = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id).select('username email avatar')
+  if (!user) throw customError(404, 'User not found')
+  res.status(200).json(user.toJSON())
+})
+
+module.exports = { updateUser, deleteUser, getUserListing, getUser }
