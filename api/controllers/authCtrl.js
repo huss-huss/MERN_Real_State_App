@@ -1,104 +1,62 @@
-const User = require('../models/userModel')
+const crypto = require('crypto')
 const bcrypt = require('bcryptjs')
+const User = require('../models/userModel')
 const { customError } = require('../utils/errorHandler')
-const jwt = require('jsonwebtoken')
+const { setAuthCookie, clearAuthCookie } = require('../utils/auth')
+const asyncHandler = require('../utils/asyncHandler')
+const { verifyFirebaseIdToken } = require('../services/firebaseAuth')
 
-const signUp = async (req, res, next) => {
+const BCRYPT_ROUNDS = 10
+// Case-insensitive match so accounts created before emails were normalised still resolve.
+const CASE_INSENSITIVE = { locale: 'en', strength: 2 }
+
+// Used to keep sign-in timing similar whether or not the email exists.
+const DUMMY_HASH = bcrypt.hashSync('not-a-real-password', BCRYPT_ROUNDS)
+
+const findByEmail = (email) => User.findOne({ email }).collation(CASE_INSENSITIVE)
+
+const signUp = asyncHandler(async (req, res) => {
   const { username, email, password } = req.body
-  try {
-    const salt = await bcrypt.genSalt(10)
-    const hashedPassword = await bcrypt.hash(password, salt)
-    const newUser = await User.create({
-      username,
-      email,
-      password: hashedPassword,
-    })
-    res.status(201).json(newUser)
-  } catch (err) {
-    next(err)
-  }
-}
+  const hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS)
+  const user = await User.create({ username, email, password: hashedPassword })
+  res.status(201).json(user.toJSON())
+})
 
-const signIn = async (req, res, next) => {
+const signIn = asyncHandler(async (req, res, next) => {
   const { email, password } = req.body
-  try {
-    const user = await User.findOne({ email })
-    if (!user) return next(customError(404, 'User not found'))
-    const isMatch = await bcrypt.compare(password, user.password)
-    if (!isMatch) return next(customError(401, 'Invalid credentials'))
+  const user = await findByEmail(email).select('+password')
+  const isMatch = await bcrypt.compare(password, user?.password || DUMMY_HASH)
+  if (!user || !isMatch) return next(customError(401, 'Invalid email or password'))
 
-    const payload = {
-      id: user._id,
-      username: user.username,
-      email: user.email,
-    }
-    const token = jwt.sign(payload, process.env.JWT_SECRET)
-    const { password: userPassword, ...rest } = user._doc
+  setAuthCookie(res, user).status(200).json(user.toJSON())
+})
 
-    res.cookie('access_token', token, { httpOnly: true }).status(200).json(rest)
-  } catch (error) {
-    next(error)
+const usernameFrom = (name, email) => {
+  const base =
+    (name || email.split('@')[0]).replace(/[^a-zA-Z0-9]/g, '').toLowerCase().slice(0, 20) ||
+    'user'
+  return `${base}${crypto.randomBytes(3).toString('hex')}`
+}
+
+const google = asyncHandler(async (req, res) => {
+  const profile = await verifyFirebaseIdToken(req.body.idToken)
+
+  let user = await findByEmail(profile.email)
+  if (!user) {
+    const randomPassword = crypto.randomBytes(32).toString('hex')
+    user = await User.create({
+      username: usernameFrom(profile.name, profile.email),
+      email: profile.email,
+      password: await bcrypt.hash(randomPassword, BCRYPT_ROUNDS),
+      ...(profile.picture && { avatar: profile.picture }),
+    })
   }
+
+  setAuthCookie(res, user).status(200).json(user.toJSON())
+})
+
+const signOut = (req, res) => {
+  clearAuthCookie(res).status(200).json({ message: 'User has been signed out' })
 }
 
-const google = async (req, res, next) => {
-  const { name, email, photo } = req.body
-  try {
-    const user = await User.findOne({ email })
-    if (user) {
-      const payload = {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-      }
-      const token = jwt.sign(payload, process.env.JWT_SECRET)
-      const { password: userPassword, ...rest } = user._doc
-
-      res
-        .cookie('access_token', token, { httpOnly: true })
-        .status(200)
-        .json(rest)
-    } else {
-      const generatedPassword =
-        Math.random().toString(36).slice(-8) +
-        Math.random().toString(36).slice(-8)
-      const salt = await bcrypt.genSalt(10)
-      const hashedPassword = await bcrypt.hash(generatedPassword, salt)
-      const newUser = await User.create({
-        username:
-          name.split(' ').join('').toLowerCase() +
-          Math.random().toString(36).slice(-4),
-        email,
-        password: hashedPassword,
-        avatar: photo,
-      })
-      await newUser.save()
-      const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET)
-      const { password: userPassword, ...rest } = newUser._doc
-      res
-        .cookie('access_token', token, { httpOnly: true })
-        .status(200)
-        .json(rest)
-    }
-  } catch (error) {
-    next(error)
-  }
-}
-
-const signOut = (req, res, next) => {
-  try {
-    res
-      .clearCookie('access_token')
-      .status(200)
-      .json({ message: 'User has been signed out' })
-  } catch (error) {
-    next
-  }
-}
-
-module.exports = {
-  signUp,
-  signIn,
-  google,
-  signOut,
-}
+module.exports = { signUp, signIn, google, signOut }
