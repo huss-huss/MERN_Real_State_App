@@ -1,12 +1,21 @@
 {
   "name": "mern_real_state_app",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "private": true,
+  "description": "MERN real-estate listings app: Express + MongoDB API with a React/Vite client",
+  "main": "api/index.js",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "nodemon api/index.js",
     "start": "node api/index.js",
-    "build": "npm install && npm install --prefix client && npm run build --prefix client"
+    "dev:client": "npm run dev --prefix client",
+    "build": "npm install && npm install --prefix client && npm run build --prefix client",
+    "lint": "eslint api eslint.config.js --max-warnings 0",
+    "lint:fix": "eslint api eslint.config.js --fix",
+    "test": "jest",
+    "test:coverage": "jest --coverage"
   },
   "keywords": [],
   "author": "",
@@ -14,9 +23,41 @@
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.6",
+    "cors": "^2.8.6",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
+    "express-rate-limit": "^8.7.1",
+    "helmet": "^8.3.0",
+    "jose": "^5.10.0",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^7.6.2"
+    "mongoose": "^7.6.2",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "globals": "^17.13.0",
+    "jest": "^30.5.2",
+    "mongodb-memory-server": "^11.3.0",
+    "nodemon": "^3.1.14",
+    "supertest": "^7.3.1"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "roots": [
+      "<rootDir>/api"
+    ],
+    "setupFiles": [
+      "<rootDir>/api/__tests__/helpers/env.js"
+    ],
+    "testMatch": [
+      "**/__tests__/**/*.test.js"
+    ],
+    "collectCoverageFrom": [
+      "api/**/*.js",
+      "!api/__tests__/**",
+      "!api/index.js"
+    ],
+    "testTimeout": 30000
   }
 }

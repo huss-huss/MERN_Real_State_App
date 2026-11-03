@@ -1,0 +1,5 @@
+process.env.NODE_ENV = 'test'
+process.env.JWT_SECRET = 'test-secret-that-is-only-used-in-the-test-suite'
+process.env.FIREBASE_PROJECT_ID = 'test-project'
+process.env.AUTH_RATE_LIMIT_MAX = process.env.AUTH_RATE_LIMIT_MAX || '1000'
+process.env.API_RATE_LIMIT_MAX = process.env.API_RATE_LIMIT_MAX || '10000'

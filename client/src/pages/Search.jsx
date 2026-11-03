@@ -10,7 +10,7 @@ const Search = () => {
     parking: false,
     furnished: false,
     offer: false,
-    sort: 'created_at',
+    sort: 'createdAt',
     order: 'desc',
   })
 
@@ -47,7 +47,7 @@ const Search = () => {
         parking: parkingFromUrl === 'true' ? true : false,
         furnished: furnishedFromUrl === 'true' ? true : false,
         offer: offerFromUrl === 'true' ? true : false,
-        sort: sortFromUrl || 'created_at',
+        sort: sortFromUrl || 'createdAt',
         order: orderFromUrl || 'desc',
       })
     }
@@ -100,7 +100,7 @@ const Search = () => {
     }
 
     if (id === 'sort_order') {
-      const sort = value.split('_')[0] || 'created_at'
+      const sort = value.split('_')[0] || 'createdAt'
       const order = value.split('_')[1] || 'desc'
 
       setSidebarData({
@@ -230,7 +230,7 @@ const Search = () => {
               className="border rounded-lg p-3"
               id="sort_order"
               onChange={handleChange}
-              defaultValue={'created_at_desc'}
+              defaultValue={'createdAt_desc'}
             >
               <option value="regularPrice_desc">Price high to low</option>
               <option value="regularPrice_asc">Price low to high</option>

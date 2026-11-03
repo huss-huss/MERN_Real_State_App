@@ -13,21 +13,22 @@ const OAuth = () => {
       const auth = getAuth(app)
 
       const result = await signInWithPopup(auth, provider)
-      const { displayName, email, photoURL } = result.user
+      // The API verifies this Firebase ID token instead of trusting client-sent profile data.
+      const idToken = await result.user.getIdToken()
 
       const res = await fetch('/api/auth/google', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          name: displayName,
-          email: email,
-          photo: photoURL,
-        }),
+        body: JSON.stringify({ idToken }),
       })
 
       const data = await res.json()
+      if (!res.ok) {
+        console.log('Could not continue with google', data.message)
+        return
+      }
 
       dispatch(signInSuccess(data))
       navigate('/')

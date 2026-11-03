@@ -1,5 +1,8 @@
 const express = require('express')
 const verifyUser = require('../utils/verifyUser')
+const validate = require('../middleware/validate')
+const { idParams } = require('../validators/common')
+const { updateUserSchema } = require('../validators/user')
 const {
   updateUser,
   deleteUser,
@@ -9,9 +12,11 @@ const {
 
 const router = express.Router()
 
-router.post('/update/:id', verifyUser, updateUser)
-router.delete('/delete/:id', verifyUser, deleteUser)
-router.get('/listings/:id', verifyUser, getUserListing)
-router.get('/:id', verifyUser, getUser)
+router.use(verifyUser)
+
+router.post('/update/:id', validate(idParams, 'params'), validate(updateUserSchema), updateUser)
+router.delete('/delete/:id', validate(idParams, 'params'), deleteUser)
+router.get('/listings/:id', validate(idParams, 'params'), getUserListing)
+router.get('/:id', validate(idParams, 'params'), getUser)
 
 module.exports = router
