@@ -154,8 +154,8 @@ const UpdateListing = () => {
       })
       const data = await res.json()
       setLoading(false)
-      if (!data.ok) {
-        setError(data.message)
+      if (!res.ok) {
+        return setError(data.message)
       }
       navigate(`/listings/${data._id}`)
     } catch (error) {
