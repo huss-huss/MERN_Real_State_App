@@ -1,39 +1,32 @@
 require('dotenv').config()
-const express = require('express')
-const path = require('path')
+const mongoose = require('mongoose')
 
+const { assertEnv } = require('./config/env')
 const dbConnect = require('./config/db')
-const userRoute = require('./routes/userRoute')
-const authRoute = require('./routes/authRoute')
-const listingRoute = require('./routes/listingRoute')
-const { notFound, errorHandler } = require('./utils/errorHandler')
-const cookieParser = require('cookie-parser')
+const { createApp } = require('./app')
 
-const __local_dirname = path.resolve()
+const PORT = Number(process.env.PORT) || 3000
 
-const app = express()
+const start = async () => {
+  assertEnv()
+  await dbConnect()
 
-// Connect to MongoDB
-dbConnect()
+  const server = createApp().listen(PORT, () => {
+    console.log(`Server listening on port ${PORT}`)
+  })
 
-// Middleware
-app.use(express.json())
-app.use(cookieParser())
+  const shutdown = (signal) => {
+    console.log(`${signal} received, shutting down`)
+    server.close(() => {
+      mongoose.connection.close(false).finally(() => process.exit(0))
+    })
+    setTimeout(() => process.exit(1), 10_000).unref()
+  }
+  process.on('SIGTERM', shutdown)
+  process.on('SIGINT', shutdown)
+}
 
-// Routes
-app.use('/api/auth', authRoute)
-app.use('/api/user', userRoute)
-app.use('/api/listing', listingRoute)
-
-app.use(express.static(path.join(__local_dirname, '/client/dist')))
-
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__local_dirname, 'client', 'dist', 'index.html'))
-})
-
-app.use(notFound)
-app.use(errorHandler)
-
-app.listen(3000, () => {
-  console.log('Server listening on port 3000...')
+start().catch((err) => {
+  console.error('Failed to start server:', err.message)
+  process.exit(1)
 })

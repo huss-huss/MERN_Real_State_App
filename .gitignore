@@ -1,2 +1,7 @@
 .env
+.env.*
+!.env.example
 node_modules
+coverage
+client/dist
+.DS_Store
